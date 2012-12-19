@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version='1.4'
+version='1.4-p3'
 setup(
     name='pyres',
     version=version,
@@ -20,9 +20,10 @@ setup(
     pyres_worker=pyres.scripts:pyres_worker
     """,
     install_requires=[
-            item for item in
-            open("requirements.txt").read().split("\n")
-            if item],
+        "simplejson>=2.0.9",
+        "redis>=2.4.12",
+        "setproctitle>=1.0",
+        ],
     classifiers = [
             'Development Status :: 4 - Beta',
             'Environment :: Console',
