@@ -1,4 +1,4 @@
-__version__ = '1.4'
+__version__ = '1.4.1'
 
 from redis import Redis
 import pyres.json_parser as json
@@ -7,6 +7,8 @@ import os
 import time, datetime
 import sys
 import logging
+
+logger = logging.getLogger(__name__)
 
 def special_log_file(filename):
     if filename in ("stderr", "stdout"):
@@ -56,7 +58,8 @@ def get_logging_handler(filename, procname, namespace=None):
 def setup_logging(procname, log_level=logging.INFO, filename=None):
     if log_level == logging.NOTSET:
         return
-    logger = logging.getLogger()
+    main_package = __name__.split('.', 1)[0] if '.' in __name__ else __name__
+    logger = logging.getLogger(main_package)
     logger.setLevel(log_level)
     handler = get_logging_handler(filename, procname)
     logger.addHandler(handler)
@@ -113,7 +116,7 @@ class ResQ(object):
 
     The ``__init__`` takes these keyword arguments:
 
-        ``server`` -- IP address and port of the Redis server to which you want to connect. Default is `localhost:6379`.
+        ``server`` -- IP address and port of the Redis server to which you want to connect, and optional Redis DB number. Default is `localhost:6379`.
 
         ``password`` -- The password, if required, of your Redis server. Default is "None".
 
@@ -185,8 +188,9 @@ class ResQ(object):
     def _set_redis(self, server):
         if isinstance(server, basestring):
             self.dsn = server
-            host, port = server.split(':')
-            self._redis = Redis(host=host, port=int(port), password=self.password)
+            address, _, db = server.partition('/')
+            host, port = address.split(':')
+            self._redis = Redis(host=host, port=int(port), db=int(db or 0), password=self.password)
             self.host = host
             self.port = int(port)
         elif isinstance(server, Redis):
@@ -213,18 +217,18 @@ class ResQ(object):
             class_name = '%s.%s' % (klass.__module__, klass.__name__)
             self.enqueue_from_string(class_name, queue, *args)
         else:
-            logging.warning("unable to enqueue job with class %s" % str(klass))
+            logger.warning("unable to enqueue job with class %s" % str(klass))
 
     def enqueue_from_string(self, klass_as_string, queue, *args, **kwargs):
         payload = {'class':klass_as_string, 'args':args, 'enqueue_timestamp': time.time()}
         if 'first_attempt' in kwargs:
             payload['first_attempt'] = kwargs['first_attempt']
         self.push(queue, payload)
-        logging.info("enqueued '%s' job on queue %s" % (klass_as_string, queue))
+        logger.info("enqueued '%s' job on queue %s" % (klass_as_string, queue))
         if args:
-            logging.debug("job arguments: %s" % str(args))
+            logger.debug("job arguments: %s" % str(args))
         else:
-            logging.debug("no arguments passed in.")
+            logger.debug("no arguments passed in.")
 
     def queues(self):
         return self.redis.smembers("resque:queues") or []
@@ -283,10 +287,10 @@ class ResQ(object):
         self.enqueue_at_from_string(datetime, class_name, klass.queue, *args, **kwargs)
 
     def enqueue_at_from_string(self, datetime, klass_as_string, queue, *args, **kwargs):
-        logging.info("scheduled '%s' job on queue %s for execution at %s" %
+        logger.info("scheduled '%s' job on queue %s for execution at %s" %
                      (klass_as_string, queue, datetime))
         if args:
-            logging.debug("job arguments are: %s" % str(args))
+            logger.debug("job arguments are: %s" % str(args))
         payload = {'class': klass_as_string, 'queue': queue, 'args': args}
         if 'first_attempt' in kwargs:
             payload['first_attempt'] = kwargs['first_attempt']
