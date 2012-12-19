@@ -25,7 +25,7 @@ class Worker(object):
 
     job_class = Job
 
-    def __init__(self, queues=(), server="localhost:6379", password=None, timeout=None, db=1):
+    def __init__(self, queues=(), server="localhost:6379", password=None, timeout=None):
         self.queues = queues
         self.validate_queues()
         self._shutdown = False
@@ -35,7 +35,7 @@ class Worker(object):
         self.timeout = timeout
 
         if isinstance(server, basestring):
-            self.resq = ResQ(server=server, password=password, db=db)
+            self.resq = ResQ(server=server, password=password)
         elif isinstance(server, ResQ):
             self.resq = server
         else:

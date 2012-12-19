@@ -64,7 +64,6 @@ def pyres_worker():
     parser.add_option("--host", dest="host", default="localhost")
     parser.add_option("--port", dest="port", type="int", default=6379)
     parser.add_option("--password", dest="password", default="")
-    parser.add_option("--database", dest="db", default=1)
     parser.add_option("-i", '--interval', dest='interval', default=None, help='the default time interval to sleep between runs')
     parser.add_option('-l', '--log-level', dest='log_level', default='info', help='log level.  Valid values are "debug", "info", "warning", "error", "critical", in decreasing order of verbosity. Defaults to "info" if parameter not specified.')
     parser.add_option('-f', dest='logfile', help='If present, a logfile will be used.  "stderr", "stdout", and "syslog" are all special values.')
@@ -89,7 +88,7 @@ def pyres_worker():
     queues = args[0].split(',')
     server = '%s:%s' % (options.host,options.port)
     #Worker.run(queues, server, interval, password=options.password, timeout=timeout)
-    worker = Worker(queues=queues, server=server, password=options.password, db=options.db, timeout=timeout)
+    worker = Worker(queues=queues, server=server, password=options.password, timeout=timeout)
     if (interval is not None):
         worker.work(interval)
     else:
